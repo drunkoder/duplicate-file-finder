@@ -19,6 +19,12 @@ class Migration:
                         file_path TEXT UNIQUE,
                         hash TEXT
                     )
+                    
+                    CREATE TABLE IF NOT EXISTS logs(
+                         id INTEGER PRIMARY KEY AUTOINCREMENT,
+                         message TEXT NOT NULL,
+                         timestamp DATETIME NOT NULL
+                    );
                 """
             cur.execute(sql)
             self.conn.commit()

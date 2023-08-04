@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 from controllers.file_controller import FileController
+from models.services.logging_service import LogService
 from models.helpers.file_extensions import FileExtensions
 from models.helpers.formatter_extensions import FormatterExtensions
 
@@ -11,6 +12,8 @@ from models.helpers.formatter_extensions import FormatterExtensions
 class FileView:
     def __init__(self) -> None:
         self.controller = FileController()
+        self.log_service = LogService()
+
 
 
     def start(self):
@@ -64,6 +67,7 @@ class FileView:
             #     messagebox.showinfo("Duplicate File Finder", "Duplicate files have been handled.")
             # else:
                 messagebox.showinfo("Duplicate File Finder", "No duplicates found in the selected directory.")
+            self.log_service.handle_insert('scan', directory)
 
     async def scan_directory_async(self, directory):
         await self.controller.scan_directory_async(directory, self.update_progress)
@@ -122,6 +126,7 @@ class FileView:
             if messagebox.askyesno("Delete Files", f"Do you want to delete {file_name}?"):
                 #for file_path in file_paths:
                 FileExtensions.delete_file(file_name)
+                self.log_service.handle_insert('delete', file_name)
                 self.populate_treeview()
                 self.delete_button.config(state=tk.DISABLED)
 
