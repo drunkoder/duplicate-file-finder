@@ -7,7 +7,7 @@ from controllers.file_controller import FileController
 from models.services.logging_service import LogService
 from models.helpers.file_extensions import FileExtensions
 from models.helpers.formatter_extensions import FormatterExtensions
-
+from PIL import Image, ImageTk
 
 class FileView:
     def __init__(self) -> None:
@@ -18,6 +18,9 @@ class FileView:
 
     def start(self):
         self.root = tk.Tk()
+        ico = Image.open('resources/images/delete.png')
+        topIcon = ImageTk.PhotoImage(ico)
+        self.root.wm_iconphoto(False, topIcon)
         self.root.title("Duplicate File Finder")
         self.root.geometry("800x400")
 
@@ -25,11 +28,24 @@ class FileView:
         button_frame = tk.Frame(self.root)
         button_frame.pack()
 
-        btn_browse = ttk.Button(button_frame, text="Browse Directory", command=self.browse_directory)
-        btn_browse.pack(side=tk.LEFT, padx=5, pady=5)
+        menubar = tk.Menu(self.root)
+        file_menu = tk.Menu(menubar, tearoff=False)
+        file_menu.add_command(label="Browse", command=self.browse_directory)
+        file_menu.add_command(label="Exit", command=self.close)
+        file_menu.add_command(label="About", command=self.show_about)
+        menubar.add_cascade(menu=file_menu, label="File")
+        staging = tk.Menu(menubar, tearoff=False)
+        staging.add_command(label="Set Directory", command=self.set_staging)
+        staging.add_command(label="Clear All", command=self.clear_staging)
+        staging.add_command(label="Show Files", command=self.show_staging)
+        menubar.add_cascade(menu=staging, label="Staging")
+        menubar.add_command(label="Browse Directory", command=self.browse_directory)
+        menubar.add_command(label="Delete", state=tk.DISABLED, command=self.delete_selected)
+        #btn_browse = ttk.Button(button_frame, text="Browse Directory", command=self.browse_directory)
+        #btn_browse.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.delete_button = tk.Button(button_frame, text="Delete", state=tk.DISABLED, command=self.delete_selected)
-        self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
+        #self.delete_button = tk.Button(button_frame, text="Delete", state=tk.DISABLED, command=self.delete_selected)
+        #self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         self.treeview = ttk.Treeview(self.root, columns=("file_path", "size", "last_updated"))
         self.treeview.heading("#0", text="File Name")
@@ -49,9 +65,26 @@ class FileView:
 
         self.progress_bar = ttk.Progressbar(self.root, orient="horizontal", length=300, mode="determinate")
         self.progress_bar.pack(pady=10)
-
+        self.root.config(menu=menubar)
         self.root.mainloop()
 
+    def close(self):
+        self.root.quit()
+
+    def show_about(self):
+        tk.messagebox.showinfo("About Us", "This program is developed for final project in 2nd semester.")
+
+    def set_staging(self):
+        directory = filedialog.askdirectory()
+        if directory:
+            file = open("resources/staging/staginglocation.txt", "w")
+            file.write(directory)
+            tk.messagebox.showinfo("Success", "Staging location set")
+    def clear_staging(self):
+        tk.messagebox.showinfo("TBD", "---")
+
+    def show_staging(self):
+        tk.messagebox.showinfo("TBD", "---")
 
     def browse_directory(self):
         directory = filedialog.askdirectory()
