@@ -28,19 +28,19 @@ class FileView:
         button_frame = tk.Frame(self.root)
         button_frame.pack()
 
-        menubar = tk.Menu(self.root)
-        file_menu = tk.Menu(menubar, tearoff=False)
+        self.menubar = tk.Menu(self.root)
+        file_menu = tk.Menu(self.menubar, tearoff=False)
         file_menu.add_command(label="Browse", command=self.browse_directory)
-        file_menu.add_command(label="Exit", command=self.close)
         file_menu.add_command(label="About", command=self.show_about)
-        menubar.add_cascade(menu=file_menu, label="File")
-        staging = tk.Menu(menubar, tearoff=False)
+        file_menu.add_command(label="Exit", command=self.close)
+        self.menubar.add_cascade(menu=file_menu, label="File")
+        staging = tk.Menu(self.menubar, tearoff=False)
         staging.add_command(label="Set Directory", command=self.set_staging)
         staging.add_command(label="Clear All", command=self.clear_staging)
         staging.add_command(label="Show Files", command=self.show_staging)
-        menubar.add_cascade(menu=staging, label="Staging")
-        menubar.add_command(label="Browse Directory", command=self.browse_directory)
-        menubar.add_command(label="Delete", state=tk.DISABLED, command=self.delete_selected)
+        self.menubar.add_cascade(menu=staging, label="Staging")
+        self.menubar.add_command(label="Browse Directory", command=self.browse_directory)
+        self.menubar.add_command(label="Delete", state=tk.DISABLED, command=self.delete_selected)
         #btn_browse = ttk.Button(button_frame, text="Browse Directory", command=self.browse_directory)
         #btn_browse.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -65,7 +65,7 @@ class FileView:
 
         self.progress_bar = ttk.Progressbar(self.root, orient="horizontal", length=300, mode="determinate")
         self.progress_bar.pack(pady=10)
-        self.root.config(menu=menubar)
+        self.root.config(menu=self.menubar)
         self.root.mainloop()
 
     def close(self):
@@ -147,9 +147,9 @@ class FileView:
         if selected_item:
             children = self.treeview.get_children(selected_item)
             if children:  # If the item has children, it's a parent node (group)
-                self.delete_button.config(state=tk.DISABLED)
+                self.menubar.entryconfig(4, state=tk.DISABLED) #disable delete menu
             else:
-                self.delete_button.config(state=tk.NORMAL)
+                self.menubar.entryconfig(4, state=tk.NORMAL) #enable delete menu
 
     def delete_selected(self):
         selected_item = self.treeview.focus()
@@ -161,7 +161,7 @@ class FileView:
                 FileExtensions.delete_file(file_name)
                 self.log_service.handle_insert('delete', file_name)
                 self.populate_treeview()
-                self.delete_button.config(state=tk.DISABLED)
+                self.menubar.entryconfig(4, state=tk.DISABLED)  #disable delete menu
 
     # def handle_duplicates(self, duplicate_files):
     #     for files in duplicate_files:
