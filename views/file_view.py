@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 from controllers.file_controller import FileController
+from models.constants import CONSTANTS
+from models.enums import ActionType
 from models.services.logging_service import LogService
 from models.helpers.file_extensions import FileExtensions
 from models.helpers.formatter_extensions import FormatterExtensions
@@ -40,7 +42,9 @@ class FileView:
         staging.add_command(label="Show Files", command=self.show_staging)
         self.menubar.add_cascade(menu=staging, label="Staging")
         self.menubar.add_command(label="Browse Directory", command=self.browse_directory)
-        self.menubar.add_command(label="Delete", state=tk.DISABLED, command=self.delete_selected)
+        self.menubar.add_command(label="Delete", state=tk.DISABLED, command=self.delete_duplicate)
+        self.menubar.add_command(label="Stage", state=tk.DISABLED, command=self.move_duplicate)
+        self.menubar.add_command(label="Current Directory: ", state=tk.DISABLED)
         #btn_browse = ttk.Button(button_frame, text="Browse Directory", command=self.browse_directory)
         #btn_browse.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -66,6 +70,8 @@ class FileView:
         self.progress_bar = ttk.Progressbar(self.root, orient="horizontal", length=300, mode="determinate")
         self.progress_bar.pack(pady=10)
         self.root.config(menu=self.menubar)
+        
+        self.update_current_directory()
         self.root.mainloop()
 
     def close(self):
@@ -77,14 +83,32 @@ class FileView:
     def set_staging(self):
         directory = filedialog.askdirectory()
         if directory:
-            file = open("resources/staging/staginglocation.txt", "w")
-            file.write(directory)
+            with open(CONSTANTS.STAGING_PATH, 'w') as file:
+                file.write(directory)
+                file.flush()  # Flush the buffer to write immediately
+                self.update_current_directory()
             tk.messagebox.showinfo("Success", "Staging location set")
+
     def clear_staging(self):
-        tk.messagebox.showinfo("TBD", "---")
+        dir = FileExtensions.getStagingDirectory()
+        if dir:
+            response = messagebox.askyesno("Warning", f"This action cannot be undone. Are you sure you want to delete all files in {dir}?")
+            if response:
+                if FileExtensions.deleteAllInDirectory(dir):
+                    messagebox.showinfo("Success", "Staging directory has been cleared.")
+                                
 
     def show_staging(self):
-        tk.messagebox.showinfo("TBD", "---")
+        dir = FileExtensions.getStagingDirectory()
+        if dir:
+            FileExtensions.openDirectory(dir)
+
+    def update_current_directory(self):
+        dir = FileExtensions.getStagingDirectory()
+        if dir:
+            curr_dir = "Current Directory: " + dir
+            self.menubar.entryconfig(6, label=curr_dir)  # Update Current directory label
+            
 
     def browse_directory(self):
         directory = filedialog.askdirectory()
@@ -105,7 +129,7 @@ class FileView:
     async def scan_directory_async(self, directory):
         await self.controller.scan_directory_async(directory, self.update_progress)
 
-    def update_progress(self, progress):
+    async def update_progress(self, progress):
         self.progress_bar["value"] = progress
         self.root.update_idletasks()
 
@@ -148,26 +172,44 @@ class FileView:
             children = self.treeview.get_children(selected_item)
             if children:  # If the item has children, it's a parent node (group)
                 self.menubar.entryconfig(4, state=tk.DISABLED) #disable delete menu
+                self.menubar.entryconfig(5, state=tk.DISABLED) #disable move menu
             else:
                 self.menubar.entryconfig(4, state=tk.NORMAL) #enable delete menu
+                self.menubar.entryconfig(5, state=tk.NORMAL) #disable move menu
 
-    def delete_selected(self):
+    def delete_duplicate(self):
         selected_item = self.treeview.focus()
         if selected_item:
             item = self.treeview.item(selected_item)
             file_name = item["values"][0]#[item["values"][0] for item in self.treeview.get_children(selected_item)]
             if messagebox.askyesno("Delete Files", f"Do you want to delete {file_name}?"):
                 #for file_path in file_paths:
-                FileExtensions.delete_file(file_name)
-                self.log_service.handle_insert('delete', file_name)
+                FileExtensions.deleteFile(file_name)
+                self.log_service.handle_insert(ActionType.DELETE, file_name)
                 self.populate_treeview()
                 self.menubar.entryconfig(4, state=tk.DISABLED)  #disable delete menu
+
+    def move_duplicate(self):
+        selected_item = self.treeview.focus()
+        if selected_item:
+            item = self.treeview.item(selected_item)
+            file_name = item["values"][0]#[item["values"][0] for item in self.treeview.get_children(selected_item)]
+            if messagebox.askyesno("Move File", f"Do you want to move {file_name} to staging?"):
+                #for file_path in file_paths:'
+                dir = FileExtensions.getStagingDirectory()
+                if dir:
+                    FileExtensions.moveFileToDirectory(file_name, dir)
+                    self.log_service.handle_insert(ActionType.MOVE, file_name)
+                    self.populate_treeview()
+                    self.menubar.entryconfig(5, state=tk.DISABLED)  #disable move menu
+                else:
+                    messagebox.showerror("Error", "Staging directory is not set. Please set it first.")
 
     # def handle_duplicates(self, duplicate_files):
     #     for files in duplicate_files:
     #         if messagebox.askyesno("Duplicate Found", f"Found {len(files)} duplicates of {os.path.basename(files[0])}. Do you want to delete them?"):
     #             for file_path in files:
-    #                 if FileExtensions.delete_file(file_path):
+    #                 if FileExtensions.deleteFile(file_path):
     #                     print(f"Deleted {file_path}")
     #                 else:
     #                     print(f"Failed to delete {file_path}")

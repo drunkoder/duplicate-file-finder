@@ -1,4 +1,5 @@
 import datetime
+from models.enums import ActionType
 
 from models.log_repository import Log
 from models.log_repository import DB
@@ -16,8 +17,10 @@ class LogService:
     def handle_insert(self, action, location):
         message = ""
         timestamp = datetime.datetime.now().strftime(CONSTANTS.FORMAT_DATETIME_DB)
-        if action == 'delete':
+        if action == ActionType.DELETE:
             message = 'Deleted file '+ location
+        elif action == ActionType.MOVE:
+            message = 'Moved file '+ location
         else:
             message = 'Scanned directory '+ location
         log = Log(message, timestamp)
