@@ -1,12 +1,6 @@
 import sqlite3
 from contextlib import closing
-
-
-class Log:
-    def __init__(self, message, timestamp):
-        self.message = message
-        self.timestamp = timestamp
-
+from models.log import Log
 
 class DB:
     def __init__(self, db_name):
