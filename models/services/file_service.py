@@ -4,10 +4,13 @@ import shutil
 
 from models.constants import CONSTANTS
 
-class FileExtensions:
+class FileService:
+
+    def __init__(self):
+        pass
 
     # get all files recursively
-    def getAll(directory):
+    def get_all(self, directory):
         try:
             file_list = []
             for root, _, files in os.walk(directory):
@@ -21,21 +24,21 @@ class FileExtensions:
 
     
     # Calculates the MD5 hash of a file
-    def getFileHash(file_path):
+    def get_file_hash(self, file_path):
         hash_md5 = hashlib.md5()
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
     
-    def deleteFile(file_path):
+    def delete_file(self, file_path):
         try:
             os.remove(file_path)
             return True
-        except OSError:
-            return False
+        except Exception as e:
+            print("An error occurred:", e)
         
-    def deleteAllInDirectory(directory_path):
+    def delete_all_in_directory(self, directory_path):
         try:
             for filename in os.listdir(directory_path):
                 file_path = os.path.join(directory_path, filename)
@@ -52,14 +55,14 @@ class FileExtensions:
             print("An error occurred:", e)
             return False
 
-    def openDirectory(directory_path):
+    def open_directory(self, directory_path):
         try:
             os.startfile(directory_path) # Opens the directory in File Explorer
-        except FileNotFoundError:
-            print("Error: The 'explorer' command was not found.")
+        except Exception as e:
+            print("An error occurred:", e)
 
 
-    def moveFileToDirectory(source, destination_directory):
+    def move_file_to_directory(self, source, destination_directory):
         try:
             if not os.path.exists(source):
                 print("Source file does not exist.")
@@ -82,6 +85,6 @@ class FileExtensions:
             print("An error occurred:", e)
             return False
         
-    def getStagingDirectory():
+    def get_staging_directory(self):
         with open(CONSTANTS.STAGING_PATH, 'r') as file:
             return file.read()

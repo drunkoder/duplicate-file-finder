@@ -40,3 +40,11 @@ class DB:
             '''
             cur.execute(sql, [log.message])
             self.conn.commit()
+
+    def clear_log(self):
+        with closing(self.conn.cursor()) as cur:
+            sql = '''
+                delete from logs
+            '''
+            cur.execute(sql)
+            self.conn.commit()

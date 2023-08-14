@@ -25,3 +25,6 @@ class LogService:
             message = 'Scanned directory '+ location
         log = Log(message, timestamp)
         self.db.insert_log(log)
+
+    def handle_delete(self):
+        self.db.clear_log()
