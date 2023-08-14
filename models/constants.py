@@ -5,3 +5,4 @@ class CONSTANTS:
     FORMAT_DATETIME = "%Y-%m-%d %I:%M %p"
     FORMAT_DATETIME_DB = "%Y-%m-%d %H:%M:%S"
     STAGING_PATH = "resources/staging/staginglocation.txt"
+    ICON_PATH = "resources/images/delete.png"

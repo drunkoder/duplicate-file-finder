@@ -9,10 +9,10 @@ class LogService:
 
     def __init__(self):
         self.db = DB('duplicate_files.db')
+
     def handle_select(self):
         logs = self.db.get_all_logs()
-        for l in logs:
-            print(l)
+        return logs
 
     def handle_insert(self, action, location):
         message = ""

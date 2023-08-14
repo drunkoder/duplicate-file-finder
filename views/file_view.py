@@ -11,18 +11,18 @@ from models.helpers.file_extensions import FileExtensions
 from models.helpers.formatter_extensions import FormatterExtensions
 from PIL import Image, ImageTk
 
+
 class FileView:
     def __init__(self) -> None:
         self.controller = FileController()
         self.log_service = LogService()
-
-
+        self.is_staging = False
+        self.icon = Image.open(CONSTANTS.ICON_PATH)
 
     def start(self):
         self.root = tk.Tk()
-        ico = Image.open('resources/images/delete.png')
-        topIcon = ImageTk.PhotoImage(ico)
-        self.root.wm_iconphoto(False, topIcon)
+        self.top_icon = ImageTk.PhotoImage(self.icon)
+        self.root.wm_iconphoto(False, self.top_icon)
         self.root.title("Duplicate File Finder")
         self.root.geometry("800x400")
 
@@ -33,6 +33,7 @@ class FileView:
         self.menubar = tk.Menu(self.root)
         file_menu = tk.Menu(self.menubar, tearoff=False)
         file_menu.add_command(label="Browse", command=self.browse_directory)
+        file_menu.add_command(label="History", command=self.show_history)
         file_menu.add_command(label="About", command=self.show_about)
         file_menu.add_command(label="Exit", command=self.close)
         self.menubar.add_cascade(menu=file_menu, label="File")
@@ -116,7 +117,10 @@ class FileView:
             # start the file scanning process asynchronously
             self.progress_bar["value"] = 0
             asyncio.run(self.scan_directory_async(directory))
-
+            if directory == FileExtensions.getStagingDirectory():
+                self.is_staging = True
+            else:
+                self.is_staging = False
             self.populate_treeview()
 
             if not self.controller.duplicate_files:
@@ -175,7 +179,8 @@ class FileView:
                 self.menubar.entryconfig(5, state=tk.DISABLED) #disable move menu
             else:
                 self.menubar.entryconfig(4, state=tk.NORMAL) #enable delete menu
-                self.menubar.entryconfig(5, state=tk.NORMAL) #disable move menu
+                if not self.is_staging:
+                    self.menubar.entryconfig(5, state=tk.NORMAL) #enable move menu
 
     def delete_duplicate(self):
         selected_item = self.treeview.focus()
@@ -188,6 +193,7 @@ class FileView:
                 self.log_service.handle_insert(ActionType.DELETE, file_name)
                 self.populate_treeview()
                 self.menubar.entryconfig(4, state=tk.DISABLED)  #disable delete menu
+                self.menubar.entryconfig(5, state=tk.DISABLED)  #disable move menu
 
     def move_duplicate(self):
         selected_item = self.treeview.focus()
@@ -201,9 +207,24 @@ class FileView:
                     FileExtensions.moveFileToDirectory(file_name, dir)
                     self.log_service.handle_insert(ActionType.MOVE, file_name)
                     self.populate_treeview()
+                    self.menubar.entryconfig(4, state=tk.DISABLED)  #disable delete menu
                     self.menubar.entryconfig(5, state=tk.DISABLED)  #disable move menu
                 else:
                     messagebox.showerror("Error", "Staging directory is not set. Please set it first.")
+
+    def show_history(self):
+        history_pop = tk.Toplevel(self.root)
+        history_pop.title("History")
+        history_pop.geometry("800x400")
+        history_pop.wm_iconphoto(False, self.top_icon)
+        history_pop.config(background='white')
+        history_treeview = ttk.Treeview(history_pop, columns=("DateTime", "Message"), show='headings')
+        history_treeview.heading("#1", text="Created date", anchor='w')
+        history_treeview.heading("#2", text="Message", anchor='w')
+        history_treeview.pack(fill="both", expand=True)
+        logs = self.log_service.handle_select()
+        for log in logs:
+            history_treeview.insert("", tk.END, values=(log.timestamp, log.message))
 
     # def handle_duplicates(self, duplicate_files):
     #     for files in duplicate_files:
