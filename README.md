@@ -8,7 +8,7 @@ To run the project, follow these steps:
 
 1. **Clone the Repository:**
     <br>Clone this repository to your local machine using the following command: <br>
-   `git clone https://github.com/your-username/duplicate-file-finder.git`
+   `git clone https://github.com/drunkoder/duplicate-file-finder.git`
 
 3. **Change Directory:**
     <br>Navigate to the project's main directory:<br>
